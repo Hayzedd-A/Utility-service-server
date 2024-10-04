@@ -7,7 +7,6 @@ const authorization = async (req, res, next) => {
     if (!token) throw new Error("Unauthorized");
 
     const { email, tokenVersion } = await jwtVerifier(token);
-    console.log(tokenVersion);
     const customer = await Customers.findOne({
       where: { email: email, token_version: tokenVersion },
     });

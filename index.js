@@ -17,7 +17,14 @@ const {
 const app = Express();
 app.use(Express.json());
 // enable cors
-app.use(cors());
+app.use(
+  cors({
+    origin: "*", // allow all origins
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    exposedHeaders: ["access-token"],
+  })
+);
 const PORT = process.env.PORT;
 
 try {
@@ -25,7 +32,8 @@ try {
     await sequelize.authenticate();
     console.log("Connection has been established successfully.");
     // sync your models with the database
-    await sequelize.sync({ force: true });
+    // await sequelize.sync({ force: true });
+    // await sequelize.sync({ alter: true });
     console.log("All models were synchronized successfully.");
     app.listen(PORT, () => {
       routeMap(app);

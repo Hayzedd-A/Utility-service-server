@@ -222,6 +222,7 @@ const verifyEmail = async (req, res) => {
 
 const logCustomerIn = async (req, res) => {
   try {
+    console.log("user is attempting to login");
     // validate  the request body with joi
     const { error } = customer_login_schema.validate(req.body);
     if (error) throw new Error(error.details[0].message);
@@ -460,10 +461,11 @@ const getServices = async (req, res) => {
   try {
     const { data } = await getCategories();
     // console.log(data);
+    data.data.length = 5;
     res.status(200).json({
       status: "success",
       message: "Services retrieved successfully",
-      data: data,
+      data: data.data,
     });
   } catch (error) {
     console.log(error.stack);

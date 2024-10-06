@@ -15,23 +15,17 @@ const {
 const {
   customer_signup_schema,
   customer_login_schema,
-  payment_schema,
   email_schema,
   password_recovery_schema,
 } = require("../validations/customers.validations");
 const { v4: uuid } = require("uuid");
 const { sendEmail } = require("../services/email.service");
 const sequelize = require("../config/sequelize");
-const {
-  initiatePayment,
-  verifyPayment,
-} = require("../services/paystack.service");
 const { jwtSigner } = require("../utils/jwt.utils");
 const { Sequelize } = require("sequelize");
 const { getCategories } = require("../services/flutterwave.service");
 const OTP_EXPIRY_MINUTE = 10; // 10 minutes
 const PASSWORD_RECOVERY_EXPIRY_MINUTE = 15; // 15 minutes
-const TO_NAIRA = 100; // 100 kobo equals 1 naira
 
 const signCustomerUp = async (req, res) => {
   try {
@@ -261,24 +255,29 @@ const logCustomerIn = async (req, res) => {
   }
 };
 
-const initializePayments = async (req, res) => {
+const getCustomerDetails = async (req, res) => {
   try {
-    const { amount, customer } = req.params;
+    const { customer } = req.params;
 
-    // validate the amount
-    const { error } = payment_schema.validate({ amount });
-    if (error) throw new Error("Invalid amount");
-
-    // initiate the payment gateway
-    const { data } = await initiatePayment(customer.email, amount);
-    if (!data.status) throw new Error("Something went wrong");
-
-    res.status(200).json({
-      status: "success",
-      message: "Payment initiated successfully",
-      reference: data.data.reference,
-      link: data.data.authorization_url,
-    });
+    if (customer) {
+      // delete sensitive data from the customer
+      const {
+        password_hash,
+        salt,
+        token_version,
+        created_at,
+        updated_at,
+        wallet_id,
+        customer_id,
+        ...customerDetails
+      } = customer;
+      console.log(customerDetails);
+      return res.status(200).json({
+        status: "success",
+        message: "Customer details retrieved successfully",
+        data: customerDetails,
+      });
+    }
   } catch (error) {
     console.log(error.stack);
     res.status(400).json({
@@ -288,61 +287,47 @@ const initializePayments = async (req, res) => {
   }
 };
 
-const fundWallet = async (req, res) => {
+const getCustomerWallet = async (req, res) => {
   try {
     const { customer } = req.params;
-    const { reference } = req.body;
-    if (!reference) throw new Error("Reference is needed");
-    // validate the reference
-    console.log(reference);
 
-    // verify the payment
-    const { data } = await verifyPayment(reference);
-    // console.log(data);
-    // return;
+    if (customer) {
+      // get the customer wallet excluding sensitive data
+      const wallet = await Wallets.findOne({
+        where: { customer_id: customer.customer_id },
+        attributes: {
+          exclude: ["customer_id", "wallet_id", "updated_at", "created_at"],
+        },
+      });
 
-    if (!data.status) throw new Error("Transaction reference is invalid");
-    if (data.data.status !== "success")
-      throw new Error("The transaction was not successful");
+      // get transactions history excluding sensitive data
+      const transactions = await Transactions.findAll({
+        where: { customer_id: customer.customer_id },
+        attributes: {
+          exclude: [
+            "transaction_id",
+            "customer_id",
+            "updated_at",
+            "created_at",
+          ],
+        },
+        order: [["created_at", "DESC"]],
+      });
 
-    // chech if the reference already exist in the trasaction and have been used
-    const existingTransaction = await Transactions.findOne({
-      where: { payment_reference: reference, status: "completed" },
-    });
+      const customerDetails = {
+        wallet: wallet,
+        transactions: transactions,
+      };
 
-    if (existingTransaction != null)
-      throw new Error("This transaction reference has already been used");
-
-    const amount = data.data.amount / TO_NAIRA;
-    // create a new transaction record
-    await Transactions.create({
-      transaction_id: uuid(),
-      customer_id: customer.customer_id,
-      payment_reference: reference,
-      amount: amount,
-      status: "completed",
-      type: "credit",
-      description: "Wallet funding from Payment platform",
-    });
-
-    // fetch the customer and their wallet
-    const wallet = await Wallets.findOne({
-      where: { customer_id: customer.customer_id },
-    });
-
-    // update the wallet balance
-    wallet.balance = Number(wallet.balance) + Number(amount);
-    await wallet.save();
-
-    res.status(200).json({
-      status: "success",
-      message: "Payment successful, wallet balance updated",
-    });
-
-    // fetch the customer and their wallet
-    // update the wallet balance
+      // return the customer details with the wallet balance
+      return res.status(200).json({
+        status: "success",
+        message: "Customer details retrieved successfully",
+        data: customerDetails,
+      });
+    }
   } catch (error) {
-    console.log(error.message);
+    console.log(error.stack);
     res.status(400).json({
       status: "error",
       message: error.message,
@@ -457,33 +442,13 @@ const completePasswordRecovery = async (req, res) => {
   }
 };
 
-const getServices = async (req, res) => {
-  try {
-    const { data } = await getCategories();
-    // console.log(data);
-    data.data.length = 5;
-    res.status(200).json({
-      status: "success",
-      message: "Services retrieved successfully",
-      data: data.data,
-    });
-  } catch (error) {
-    console.log(error.stack);
-    res.status(400).json({
-      status: "error",
-      message: error.message,
-    });
-  }
-};
-
 module.exports = {
   signCustomerUp,
   verifyEmail,
   logCustomerIn,
-  initializePayments,
-  fundWallet,
   initiatePasswordRecovery,
   completePasswordRecovery,
-  getServices,
   resendOTP,
+  getCustomerDetails,
+  getCustomerWallet,
 };

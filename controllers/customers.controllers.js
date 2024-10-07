@@ -391,8 +391,7 @@ const initiatePasswordRecovery = async (req, res) => {
 
 const completePasswordRecovery = async (req, res) => {
   try {
-    const { email, password, confirm_password, recovery_code } = req.body;
-    console.log(confirm_password);
+    const { email, password, recovery_code } = req.body;
     console.log(password);
     // validate the email, password and confirm password
     const { error } = password_recovery_schema.validate(req.body);
@@ -434,7 +433,7 @@ const completePasswordRecovery = async (req, res) => {
       message: "Password reset successfully",
     });
   } catch (error) {
-    console.log(error.stack);
+    console.log(error.message);
     res.status(400).json({
       status: "error",
       message: error.message,

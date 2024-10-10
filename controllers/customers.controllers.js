@@ -441,6 +441,18 @@ const completePasswordRecovery = async (req, res) => {
   }
 };
 
+const confirmToken = async (req, res) => {
+  // if the program should get here, it means it passed the authentication
+  // and the token is valid
+  // normally use the token to identify the user and continue the request
+  // here we just return a success message
+  console.log("customer: ", req.params.customer);
+  res.status(200).json({
+    status: "success",
+    message: "Token confirmed successfully",
+  });
+};
+
 module.exports = {
   signCustomerUp,
   verifyEmail,
@@ -450,4 +462,5 @@ module.exports = {
   resendOTP,
   getCustomerDetails,
   getCustomerWallet,
+  confirmToken,
 };

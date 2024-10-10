@@ -4,6 +4,7 @@ const { jwtVerifier } = require("../utils/jwt.utils");
 const authorization = async (req, res, next) => {
   try {
     const { token } = req.headers;
+    console.log(token);
     if (!token) throw new Error("Unauthorized");
 
     const { email, tokenVersion } = await jwtVerifier(token);
@@ -15,6 +16,7 @@ const authorization = async (req, res, next) => {
     req.params.customer = customer.dataValues;
     next();
   } catch (error) {
+    console.log(error.message);
     return res.status(401).json({
       status: "error",
       message: error.message || "Unauthorized",

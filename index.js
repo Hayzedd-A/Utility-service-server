@@ -21,7 +21,7 @@ app.use(
   cors({
     origin: "*", // allow all origins
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: ["Content-Type", "Authorization", "token"],
     exposedHeaders: ["access-token"],
   })
 );
@@ -44,5 +44,5 @@ try {
   console.error("Unable to connect to the database:", error);
 }
 
-app.use("/customers", CustormerRoutes);
-app.use("/services", ServicesRoutes);
+app.use("/api/customers", CustormerRoutes);
+app.use("/api/services", ServicesRoutes);

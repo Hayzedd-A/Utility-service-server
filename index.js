@@ -3,6 +3,8 @@ const Express = require("express");
 const routeMap = require("express-routemap");
 const CustormerRoutes = require("./routes/customers.routes");
 const ServicesRoutes = require("./routes/services.routes");
+const swaggerJSDoc = require("swagger-jsdoc");
+const swaggerUi = require("swagger-ui-express");
 const sequelize = require("./config/sequelize");
 const cors = require("cors");
 const {
@@ -43,6 +45,28 @@ try {
 } catch (error) {
   console.error("Unable to connect to the database:", error);
 }
+
+// swagger
+const options = {
+  definition: {
+    info: {
+      title: "Utility service API Documentation",
+      version: "1.0.0",
+      description: "API documentation for the Paystack API",
+      license: {
+        name: "MIT",
+        url: "https://opensource.org/licenses/MIT",
+      },
+    },
+    servers: [
+      {
+        url: `http://localhost:${PORT}/api`,
+      },
+    ],
+  },
+  apis: ["./routes/*.js"],
+};
+// continue swagger api
 
 app.use("/api/customers", CustormerRoutes);
 app.use("/api/services", ServicesRoutes);

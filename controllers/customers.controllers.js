@@ -216,7 +216,6 @@ const verifyEmail = async (req, res) => {
 
 const logCustomerIn = async (req, res) => {
   try {
-    console.log("user is attempting to login");
     // validate  the request body with joi
     const { error } = customer_login_schema.validate(req.body);
     if (error) throw new Error(error.details[0].message);
@@ -446,7 +445,6 @@ const confirmToken = async (req, res) => {
   // and the token is valid
   // normally use the token to identify the user and continue the request
   // here we just return a success message
-  console.log("customer: ", req.params.customer);
   res.status(200).json({
     status: "success",
     message: "Token confirmed successfully",

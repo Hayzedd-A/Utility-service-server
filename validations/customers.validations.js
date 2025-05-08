@@ -6,7 +6,7 @@ const customer_signup_schema = joi.object({
   email: joi.string().email().required(),
   phone: joi.string().optional(),
   othernames: joi.string().optional(),
-  password: joi.string().min(8).uppercase().lowercase().alphanum().required(),
+  password: joi.string().min(8).uppercase().lowercase().required(),
   confirm_password: joi.string(),
 });
 
